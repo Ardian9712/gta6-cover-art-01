@@ -1,9 +1,11 @@
-import { SIZES, photoForPanel, clampValue } from './state.js';
+import { SIZES, EXPORT_ENCODINGS, photoForPanel, clampValue } from './state.js';
 
 export const PALETTES = Object.freeze({
   sunset: { sky: '#4d2563', middle: '#cf4790', sun: '#ffb06a', accent: '#ff6387', cool: '#7ae5df', ink: '#191123', paper: '#fff1d9' },
   neon: { sky: '#141d40', middle: '#76398a', sun: '#f273ba', accent: '#ee57c8', cool: '#60e9eb', ink: '#111325', paper: '#f5e8fb' },
   coast: { sky: '#204759', middle: '#41949e', sun: '#ffc98b', accent: '#ff986f', cool: '#b3efd5', ink: '#142830', paper: '#fff4db' },
+  night: { sky: '#071e2a', middle: '#11636c', sun: '#e8b660', accent: '#efbd64', cool: '#5ce2d0', ink: '#06151e', paper: '#fff3ce' },
+  vice: { sky: '#10263c', middle: '#1d8ab2', sun: '#ff71ba', accent: '#ff4fa0', cool: '#49f3e8', ink: '#101c31', paper: '#fff1f6' },
 });
 
 const gradedImages = new WeakMap();
@@ -13,12 +15,19 @@ export function layoutFor(size) {
   const { width: w, height: h } = SIZES[size];
   const u = Math.min(w, h) / 1080;
   const m = 26 * u;
-  const wide = size === 'wide';
+  const banner = size === 'banner';
+  const wide = size === 'wide' || banner;
   const portrait = size === 'portrait';
+  const story = size === 'story';
   const polygons = wide ? {
     hero: [[m, m], [w * .698, m], [w * .664, h - m], [m, h - m]],
     scene: [[w * .718, h * .077], [w - m, m], [w - m, h * .482], [w * .702, h * .504]],
     detail: [[w * .706, h * .529], [w - m, h * .507], [w - m, h - m], [w * .684, h - m]],
+    atmosphere: [[0, 0], [w, 0], [w, h], [0, h]],
+  } : story ? {
+    hero: [[m, m], [w - m, m], [w - m, h * .636], [w * .625, h * .683], [m, h * .649]],
+    scene: [[m, h * .674], [w * .55, h * .721], [w * .509, h - m], [m, h - m]],
+    detail: [[w * .579, h * .720], [w - m, h * .662], [w - m, h - m], [w * .539, h - m]],
     atmosphere: [[0, 0], [w, 0], [w, h], [0, h]],
   } : {
     hero: [[m, m], [w - m, m], [w - m, h * .653], [w * .605, h * .713], [m, h * .674]],
@@ -27,12 +36,14 @@ export function layoutFor(size) {
     atmosphere: [[0, 0], [w, 0], [w, h], [0, h]],
   };
   return {
-    w, h, u, m, wide, portrait, polygons,
-    title: wide ? { x: 72, y: 617, width: 1152, height: 337 }
-      : portrait ? { x: 67, y: 635, width: 935, height: 265 }
+    size, w, h, u, m, wide, portrait, story, banner, polygons,
+    title: banner ? { x: 72, y: 300, width: 1152, height: 228 }
+      : wide ? { x: 72, y: 617, width: 1152, height: 337 }
+      : story ? { x: 76, y: 862, width: 923, height: 334 }
+        : portrait ? { x: 67, y: 635, width: 935, height: 265 }
         : { x: 66, y: 446, width: 935, height: 249 },
-    kickerY: wide ? 572 : portrait ? 593 : 405,
-    subtitleY: wide ? 986 : portrait ? 933 : 728,
+    kickerY: banner ? 266 : wide ? 572 : story ? 816 : portrait ? 593 : 405,
+    subtitleY: banner ? 568 : wide ? 986 : story ? 1240 : portrait ? 933 : 728,
   };
 }
 
@@ -107,7 +118,7 @@ function cinematicImage(photo, mood) {
     luma[pixel] = light;
     const shadow = Math.pow(1 - light / 255, 2);
     const warm = light / 255;
-    const saturation = mood === 'neon' ? 1.08 : 1.16;
+    const saturation = mood === 'vice' ? 1.28 : mood === 'night' ? .96 : mood === 'neon' ? 1.08 : 1.16;
     let rr = light + (r - light) * saturation;
     let gg = light + (g - light) * saturation;
     let bb = light + (b - light) * saturation;
@@ -116,7 +127,19 @@ function cinematicImage(photo, mood) {
     bb = (bb - 128) * 1.12 + 128;
     if (mood === 'sunset') { rr += 14 * warm + 17 * shadow; gg -= 8 * shadow; bb += 19 * shadow - 9 * warm; }
     else if (mood === 'neon') { rr += 5 * warm + 15 * shadow; gg -= 7 * warm; bb += 28 * shadow + 13; }
-    else { rr += 10 * warm - 5 * shadow; gg += 7 * shadow; bb += 11 * shadow - 7 * warm; }
+    else if (mood === 'night') {
+      // Split-toning moves dark pixels toward teal and bright pixels toward
+      // gold independently, rather than putting a flat colour over the photo.
+      const highlight = Math.max(0, (warm - .42) / .58);
+      rr = rr * .91 + 34 * highlight - 32 * shadow;
+      gg = gg * .94 + 17 * shadow + 14 * highlight;
+      bb = bb * .92 + 31 * shadow - 39 * highlight;
+    } else if (mood === 'vice') {
+      const highlight = Math.max(0, (warm - .35) / .65);
+      rr += 38 * highlight - 24 * shadow;
+      gg += 28 * shadow - 24 * highlight;
+      bb += 42 * shadow + 19 * highlight;
+    } else { rr += 10 * warm - 5 * shadow; gg += 7 * shadow; bb += 11 * shadow - 7 * warm; }
     data[i] = rr; data[i + 1] = gg; data[i + 2] = bb;
   }
   // Restrained, original ink contours lend the image an illustrated-poster edge
@@ -137,23 +160,34 @@ function cinematicImage(photo, mood) {
   return canvas;
 }
 
-function drawPhoto(ctx, photo, polygon, crop, mood, type, palette) {
+function paintPhotoPixels(ctx, image, bounds, crop) {
+  const geometry = geometryFor(image, bounds, crop);
+  ctx.drawImage(image, geometry.sx, geometry.sy, geometry.sw, geometry.sh,
+    bounds.x, bounds.y, bounds.width, bounds.height);
+}
+
+function drawPhoto(ctx, photo, polygon, crop, mood, type, palette, strength) {
   if (!photo) return;
   const bounds = boundsFor(polygon);
-  const image = cinematicImage(photo, mood);
-  const geometry = geometryFor(image, bounds, crop);
   ctx.save();
   tracePolygon(ctx, polygon);
   ctx.clip();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(image, geometry.sx, geometry.sy, geometry.sw, geometry.sh, bounds.x, bounds.y, bounds.width, bounds.height);
+  const photoAlpha = ctx.globalAlpha;
+  // Keep only five full-strength grades cached. Blending at draw time makes a
+  // 101-position intensity control cheap without retaining 101 pixel buffers.
+  if (strength < 1) paintPhotoPixels(ctx, photo.image, bounds, crop);
+  if (strength > 0) {
+    ctx.globalAlpha = strength * photoAlpha;
+    paintPhotoPixels(ctx, cinematicImage(photo, mood), bounds, crop);
+  }
   const tint = ctx.createLinearGradient(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height);
   tint.addColorStop(0, palette.middle);
   tint.addColorStop(.42, palette.sun);
   tint.addColorStop(1, palette.sky);
   ctx.globalCompositeOperation = 'soft-light';
-  ctx.globalAlpha = type === 'hero' ? .55 : .72;
+  ctx.globalAlpha = strength * (mood === 'night' ? (type === 'hero' ? .36 : .56) : (type === 'hero' ? .55 : .72));
   ctx.fillStyle = tint;
   ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
   ctx.globalCompositeOperation = 'source-over';
@@ -168,10 +202,12 @@ function drawPhoto(ctx, photo, polygon, crop, mood, type, palette) {
   if (type === 'scene') {
     const glow = ctx.createLinearGradient(bounds.x, 0, bounds.x + bounds.width, 0);
     glow.addColorStop(0, `${palette.accent}50`); glow.addColorStop(1, `${palette.accent}00`);
-    ctx.fillStyle = glow; ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    ctx.fillStyle = glow;
+    ctx.globalAlpha = strength;
+    ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
   } else if (type === 'detail') {
     ctx.globalCompositeOperation = 'soft-light';
-    ctx.fillStyle = palette.cool; ctx.globalAlpha = .4;
+    ctx.fillStyle = palette.cool; ctx.globalAlpha = .4 * strength;
     ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
   }
   ctx.restore();
@@ -277,13 +313,15 @@ function titleLines(value) {
   return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
 }
 
-function drawTitle(ctx, text, area, palette) {
+function drawTitle(ctx, text, area, palette, textScale) {
   const lines = titleLines(text);
   if (!lines.length) return;
   const lineHeight = area.height / lines.length;
   const fontSize = Math.min(330, lineHeight / .77);
+  const scale = clampValue(textScale, 60, 100) / 100;
   ctx.save();
-  ctx.translate(area.x, area.y);
+  ctx.translate(area.x, area.y + area.height * (1 - scale));
+  ctx.scale(scale, scale);
   // Custom proportions, slanted cuts and offset ink create original lettering
   // from ordinary system sans-serif, with no game or downloadable font.
   for (const [index, line] of lines.entries()) {
@@ -319,20 +357,76 @@ function drawTitle(ctx, text, area, palette) {
   ctx.restore();
 }
 
-function drawPanelLabel(ctx, panel, layout, palette) {
-  const bounds = boundsFor(layout.polygons[panel]);
-  const x = bounds.x + (layout.wide ? 57 : 22) * layout.u;
-  const y = panel === 'scene' ? (layout.wide ? 105 : bounds.y + 69) : (layout.wide ? bounds.y + 55 : bounds.y + 69);
-  const number = panel === 'scene' ? '02' : '03';
+function spanAt(polygon, y) {
+  const crossings = [];
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+    if (a[1] === b[1] || y < Math.min(a[1], b[1]) || y > Math.max(a[1], b[1])) continue;
+    crossings.push(a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]));
+  }
+  return crossings.length > 1 ? [Math.min(...crossings), Math.max(...crossings)] : null;
+}
+
+export function edgeClearance(point, polygon) {
+  let distance = Infinity;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const along = clampValue(((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+    distance = Math.min(distance, Math.hypot(point[0] - a[0] - along * dx, point[1] - a[1] - along * dy));
+  }
+  return distance;
+}
+
+export function panelLabelGeometry(ctx, panel, layout) {
+  const polygon = layout.polygons[panel];
+  const bounds = boundsFor(polygon);
   const label = panel === 'scene' ? 'THE GETAWAY' : 'THE OTHER SIDE';
+  const fontSize = layout.wide ? 13 : 12;
+  const spacing = 1.6;
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(panel === 'scene' ? -.052 : -.073);
+  ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
+  const textWidth = Array.from(label).reduce((sum, char) => sum + ctx.measureText(char).width + spacing, 0) - spacing;
+  ctx.restore();
+  const width = Math.ceil(68 + textWidth + 16);
+  const height = 46;
+  const inset = 16;
+  const reserved = layout.wide && panel === 'scene'
+    ? [{ x: layout.w - 134, y: 31, width: 104, height: 109 }]
+    : [];
+  // A bounding box's left edge can lie outside a diagonal panel near its top.
+  // Find an entire horizontal slab inside the real polygon, including a normal
+  // inset from every edge. All four corners are checked, not just the anchor.
+  for (let y = Math.ceil(bounds.y + inset); y < bounds.y + bounds.height - height - 80; y += 4) {
+    const spans = [y, y + height / 2, y + height].map((row) => spanAt(polygon, row));
+    if (spans.some((span) => !span)) continue;
+    const left = Math.max(...spans.map((span) => span[0])) + inset;
+    const right = Math.min(...spans.map((span) => span[1])) - inset;
+    for (let x = Math.ceil(left); x + width <= right; x += 8) {
+      const corners = [[x, y], [x + width, y], [x + width, y + height], [x, y + height]];
+      if (corners.some((point) => edgeClearance(point, polygon) < inset)) continue;
+      if (reserved.some((area) => x < area.x + area.width && x + width > area.x && y < area.y + area.height && y + height > area.y)) continue;
+      return { x, y, width, height, label, number: panel === 'scene' ? '02' : '03', fontSize, spacing, textWidth, inset, corners, reserved };
+    }
+  }
+  throw new Error(`No readable label rail fits ${panel} in ${SIZES[layout.size].label}.`);
+}
+
+function drawPanelLabel(ctx, panel, layout, palette) {
+  const rail = panelLabelGeometry(ctx, panel, layout);
+  ctx.save();
+  ctx.translate(rail.x, rail.y);
+  ctx.fillStyle = `${palette.ink}dd`;
+  ctx.fillRect(0, 0, rail.width, rail.height);
   ctx.fillStyle = palette.paper;
-  ctx.fillRect(-8, -22, 34, 29);
-  ctx.font = '900 20px Arial, sans-serif'; ctx.fillStyle = palette.ink; ctx.fillText(number, -4, 0);
-  spacedText(ctx, label, 40, -3, layout.wide ? 13 : 11, 1.7, palette.paper);
-  ctx.fillStyle = palette.accent; ctx.fillRect(40, 6, layout.wide ? 174 : 126, 2);
+  ctx.fillRect(10, 8, 40, 30);
+  ctx.font = '900 21px Arial, sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = palette.ink;
+  ctx.fillText(rail.number, 17, 31);
+  spacedText(ctx, rail.label, 68, 28, rail.fontSize, rail.spacing, palette.paper);
+  ctx.fillStyle = palette.accent;
+  ctx.fillRect(68, 35, rail.textWidth, 2);
   ctx.restore();
 }
 
@@ -355,19 +449,20 @@ function drawTexture(ctx, layout, amount) {
   ctx.restore();
 }
 
-export function renderCover(canvas, state) {
+export function renderCover(canvas, state, { ungraded = false } = {}) {
   const layout = layoutFor(state.size);
   const { w, h, u, m, polygons } = layout;
   if (canvas.width !== w) canvas.width = w;
   if (canvas.height !== h) canvas.height = h;
   const ctx = canvas.getContext('2d');
   const palette = PALETTES[state.mood];
+  const strength = ungraded ? 0 : clampValue(state.intensity, 0, 100) / 100;
   ctx.resetTransform(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = palette.ink; ctx.fillRect(0, 0, w, h);
   const atmosphere = photoForPanel(state, 'atmosphere');
   if (atmosphere) {
     ctx.save(); ctx.filter = 'blur(15px)'; ctx.globalAlpha = .65;
-    drawPhoto(ctx, atmosphere, polygons.atmosphere, state.panels.atmosphere.crop, state.mood, 'atmosphere', palette);
+    drawPhoto(ctx, atmosphere, polygons.atmosphere, state.panels.atmosphere.crop, state.mood, 'atmosphere', palette, strength);
     ctx.restore();
   }
   const sky = ctx.createLinearGradient(w * .05, 0, w * .85, h);
@@ -378,7 +473,7 @@ export function renderCover(canvas, state) {
     ctx.save(); tracePolygon(ctx, polygons[panel]);
     ctx.shadowColor = '#08050c'; ctx.shadowBlur = 22 * u; ctx.shadowOffsetY = 6 * u;
     ctx.fillStyle = palette.ink; ctx.fill(); ctx.restore();
-    drawPhoto(ctx, photoForPanel(state, panel), polygons[panel], state.panels[panel].crop, state.mood, panel, palette);
+    drawPhoto(ctx, photoForPanel(state, panel), polygons[panel], state.panels[panel].crop, state.mood, panel, palette, strength);
     ctx.save(); tracePolygon(ctx, polygons[panel]); ctx.strokeStyle = '#17101f'; ctx.lineWidth = 9 * u; ctx.stroke();
     ctx.lineWidth = 1.3 * u; ctx.strokeStyle = `${palette.paper}ae`; ctx.stroke(); ctx.restore();
   }
@@ -386,7 +481,7 @@ export function renderCover(canvas, state) {
   // All silhouettes, light trails, skyline and editorial marks are generated.
   ctx.save(); tracePolygon(ctx, polygons.hero); ctx.clip();
   const sunX = layout.wide ? 191 : 142;
-  const sunY = layout.wide ? 244 : layout.portrait ? 269 : 206;
+  const sunY = layout.banner ? 145 : layout.wide ? 244 : layout.story ? 343 : layout.portrait ? 269 : 206;
   const halo = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 175 * u);
   halo.addColorStop(0, `${palette.sun}66`); halo.addColorStop(.48, `${palette.accent}26`); halo.addColorStop(1, `${palette.accent}00`);
   ctx.fillStyle = halo; ctx.fillRect(0, 0, w, h);
@@ -399,10 +494,10 @@ export function renderCover(canvas, state) {
     ctx.beginPath(); ctx.moveTo(sunX - half, yy); ctx.lineTo(sunX + half, yy); ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  const baseline = layout.wide ? 778 : layout.portrait ? 832 : 635;
+  const baseline = layout.banner ? 468 : layout.wide ? 778 : layout.story ? 1117 : layout.portrait ? 832 : 635;
   drawSkyline(ctx, layout.wide ? 832 : 637, baseline, layout.wide ? 550 : 420, u, palette);
-  drawPalm(ctx, layout.wide ? 58 : 39, baseline + 80, layout.portrait ? 459 : 367, -.025, '#181025b0');
-  drawPalm(ctx, layout.wide ? 1237 : 1021, baseline + 53, layout.portrait ? 438 : 345, -.12, '#160e26b0');
+  drawPalm(ctx, layout.wide ? 58 : 39, baseline + 80, layout.banner ? 252 : layout.story ? 642 : layout.portrait ? 459 : 367, -.025, '#181025b0');
+  drawPalm(ctx, layout.wide ? 1237 : 1021, baseline + 53, layout.banner ? 232 : layout.story ? 589 : layout.portrait ? 438 : 345, -.12, '#160e26b0');
   ctx.restore();
 
   // Neon seam: one clean luminous cut, rather than a uniform template border.
@@ -410,6 +505,7 @@ export function renderCover(canvas, state) {
   ctx.shadowColor = palette.cool; ctx.shadowBlur = 11 * u;
   ctx.beginPath();
   if (layout.wide) { ctx.moveTo(w * .691, h * .53); ctx.lineTo(w * .676, h * .956); }
+  else if (layout.story) { ctx.moveTo(w * .588, h * .710); ctx.lineTo(w * .958, h * .658); }
   else { ctx.moveTo(w * .587, h * .726); ctx.lineTo(w * .958, h * .674); }
   ctx.stroke(); ctx.restore();
 
@@ -431,17 +527,19 @@ export function renderCover(canvas, state) {
   tracePolygon(ctx, [[-5, -21], [264, -21], [254, 6], [-15, 6]]); ctx.fill();
   spacedText(ctx, kicker, 0, -3, 12, 1.45, '#241225'); ctx.restore();
 
-  drawTitle(ctx, state.title, layout.title, palette);
+  drawTitle(ctx, state.title, layout.title, palette, state.textScale);
   if (state.subtitle.trim()) {
     const subtitle = state.subtitle.trim().replace(/\s+/g, ' ').toLocaleUpperCase('en-US');
     ctx.save();
-    ctx.font = '700 15px Arial, sans-serif';
-    const measured = ctx.measureText(subtitle).width + subtitle.length * 1.35;
+    const fontSize = clampValue(state.sublineSize, 10, 24);
+    const spacing = fontSize * .09;
+    ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+    const measured = ctx.measureText(subtitle).width + subtitle.length * spacing;
     const available = layout.wide ? 1120 : 915;
     ctx.translate(layout.title.x, layout.subtitleY);
     ctx.scale(Math.min(1, available / measured), 1);
-    ctx.fillStyle = '#171020ce'; ctx.fillRect(-10, -20, measured + 20, 29);
-    spacedText(ctx, subtitle, 0, 0, 15, 1.35, palette.paper, 700);
+    ctx.fillStyle = '#171020ce'; ctx.fillRect(-10, -fontSize - 5, measured + 20, fontSize + 14);
+    spacedText(ctx, subtitle, 0, 0, fontSize, spacing, palette.paper, 700);
     ctx.restore();
   }
   drawPanelLabel(ctx, 'scene', layout, palette);
@@ -467,7 +565,27 @@ export function renderCover(canvas, state) {
 }
 
 export function canvasPNG(canvas) {
+  return canvasImage(canvas, 'png');
+}
+
+export function canvasImage(canvas, encoding, quality = 85) {
+  const type = EXPORT_ENCODINGS[encoding];
+  if (!type) return Promise.reject(new Error('Choose PNG or JPEG for your export.'));
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('The browser could not create the PNG.')), 'image/png');
+    canvas.toBlob((blob) => {
+      if (!blob || blob.type !== type.mime) reject(new Error(`The browser could not create the ${type.name}.`));
+      else resolve(blob);
+    }, type.mime, quality / 100);
   });
+}
+
+export function exportThumbnail(canvas) {
+  const thumbnail = document.createElement('canvas');
+  const ratio = Math.min(1, 160 / Math.max(canvas.width, canvas.height));
+  thumbnail.width = Math.max(1, Math.round(canvas.width * ratio));
+  thumbnail.height = Math.max(1, Math.round(canvas.height * ratio));
+  const ctx = thumbnail.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(canvas, 0, 0, thumbnail.width, thumbnail.height);
+  return thumbnail.toDataURL('image/jpeg', .7);
 }

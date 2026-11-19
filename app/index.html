@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101116">
-  <meta name="description" content="Your photo. Main-character energy. An original offline, cinematic cover-art studio.">
+  <meta name="description" content="Five frames, five cinematic grades. Set your type, sweep the before/after slider, and export PNG or JPEG. Your offline cover studio.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Viceframe — Cover Studio</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff796f'/%3E%3Cpath d='M13 16h10l9 27 9-27h10L35 50h-7z' fill='%23101116'/%3E%3C/svg%3E">
@@ -23,6 +23,9 @@
       <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
       <symbol id="icon-move" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M8 6l4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4"/></symbol>
       <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+      <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M4 9h9a7 7 0 0 1 0 14M9 4 4 9l5 5"/></symbol>
+      <symbol id="icon-guide" viewBox="0 0 24 24"><path d="M3 8V3h5m8 0h5v5M3 16v5h5m8 0h5v-5M7 7h10v10H7z"/></symbol>
+      <symbol id="icon-compare" viewBox="0 0 24 24"><path d="M12 3v18M8 5H3v14h5m8-14h5v14h-5"/></symbol>
     </defs>
   </svg>
 
@@ -35,7 +38,17 @@
       <div class="header-note">YOUR PHOTO. <span>MAIN-CHARACTER ENERGY.</span></div>
       <div class="header-actions">
         <span class="local-badge"><span class="status-dot"></span>100% local</span>
-        <button class="export-button" id="export-button" disabled>
+        <div class="export-settings" aria-label="Export settings">
+          <div class="encoding-options" role="group" aria-label="Export file type">
+            <button class="encoding-button active" data-encoding="png" aria-pressed="true">PNG</button>
+            <button class="encoding-button" data-encoding="jpeg" aria-pressed="false">JPEG</button>
+          </div>
+          <label class="quality-label" for="jpeg-quality">QUALITY</label>
+          <select id="jpeg-quality" aria-label="JPEG quality" disabled>
+            <option value="70">70%</option><option value="85" selected>85%</option><option value="95">95%</option>
+          </select>
+        </div>
+        <button class="export-button" id="export-button" aria-describedby="export-summary" aria-keyshortcuts="Control+S Meta+S" disabled>
           <svg class="icon"><use href="#icon-download"/></svg><span>Export PNG</span>
         </button>
       </div>
@@ -63,59 +76,87 @@
           <textarea id="title-input" rows="2" maxlength="72" spellcheck="false" placeholder="YOUR NEXT CHAPTER">VICE AFTER DARK</textarea>
           <div class="field-label"><label for="subtitle-input">SUBTITLE</label><span>OPTIONAL</span></div>
           <input id="subtitle-input" type="text" maxlength="100" value="A LITTLE DANGER LOOKS GOOD ON YOU." placeholder="Add your tagline…" spellcheck="false">
+          <div class="range-row type-size-row"><label for="text-scale-input">Headline size</label><input type="range" id="text-scale-input" min="60" max="100" value="100" aria-describedby="type-size-help"><output id="text-scale-value" for="text-scale-input">100%</output></div>
+          <div class="range-row type-size-row"><label for="subline-size-input">Subline size</label><input type="range" id="subline-size-input" min="10" max="24" value="15"><output id="subline-size-value" for="subline-size-input">15 px</output></div>
+          <span class="visually-hidden" id="type-size-help">Percentage of the fitted headline size. Text stays inside the composition.</span>
         </section>
 
         <section class="control-section format-section">
           <div class="section-heading"><h2><span class="step-number">03</span>Set the frame</h2></div>
-          <div class="format-options" role="group" aria-label="Poster size">
+          <div class="format-options" role="group" aria-label="Poster size" title="F cycles formats">
             <button class="format-option active" data-size="square" aria-pressed="true"><span class="format-icon square-icon"></span><strong>Square</strong><small>1080 × 1080</small></button>
             <button class="format-option" data-size="portrait" aria-pressed="false"><span class="format-icon portrait-icon"></span><strong>Portrait</strong><small>1080 × 1350</small></button>
             <button class="format-option" data-size="wide" aria-pressed="false"><span class="format-icon wide-icon"></span><strong>Wide</strong><small>1920 × 1080</small></button>
+            <button class="format-option" data-size="story" aria-pressed="false"><span class="format-icon story-icon"></span><strong>Story</strong><small>1080 × 1920</small></button>
+            <button class="format-option" data-size="banner" aria-pressed="false"><span class="format-icon banner-icon"></span><strong>Banner</strong><small>1920 × 640</small></button>
           </div>
         </section>
 
         <section class="control-section mood-section">
           <div class="section-heading"><h2><span class="step-number">04</span>Chase the light</h2></div>
-          <div class="mood-options" role="group" aria-label="Colour grade">
+          <div class="mood-options" role="group" aria-label="Colour grade" title="G cycles grades">
             <button class="mood-option active" data-mood="sunset" aria-pressed="true"><span class="mood-swatch sunset-swatch"></span>Vice sunset</button>
             <button class="mood-option" data-mood="neon" aria-pressed="false"><span class="mood-swatch neon-swatch"></span>Neon noir</button>
             <button class="mood-option" data-mood="coast" aria-pressed="false"><span class="mood-swatch coast-swatch"></span>Ocean drive</button>
+            <button class="mood-option" data-mood="night" aria-pressed="false"><span class="mood-swatch night-swatch"></span>Ocean night</button>
+            <button class="mood-option" data-mood="vice" aria-pressed="false"><span class="mood-swatch vice-swatch"></span>Neon Vice</button>
           </div>
-          <div class="grain-row"><label for="grain-input">Film grain</label><input type="range" id="grain-input" min="0" max="40" value="18"><output id="grain-value" for="grain-input">18%</output></div>
+          <p class="grade-description" id="grade-description">Coral skies. Warm skin. The golden hour, turned up.</p>
+          <div class="range-row intensity-row"><label for="intensity-input">Grade intensity</label><input type="range" id="intensity-input" min="0" max="100" value="100"><output id="intensity-value" for="intensity-input">100%</output></div>
+          <div class="range-row grain-row"><label for="grain-input">Film grain</label><input type="range" id="grain-input" min="0" max="40" value="18"><output id="grain-value" for="grain-input">18%</output></div>
         </section>
         <div class="privacy-note"><svg class="icon"><use href="#icon-shield"/></svg><span>Your photos never leave your device.</span></div>
       </aside>
 
       <main class="workspace">
         <div class="workspace-toolbar">
-          <div class="canvas-heading"><span class="eyebrow">THE MAIN EVENT</span><h2>Vice City Cinematic <span class="small-star">✦</span></h2></div>
-          <button class="quiet-button" id="preview-toggle" aria-pressed="false"><svg class="icon"><use href="#icon-eye"/></svg><span>Preview</span></button>
+          <div class="canvas-heading"><span class="eyebrow">THE MAIN EVENT</span><h2>Vice City Cinematic <span class="small-star">✦</span></h2><p class="export-summary" id="export-summary" aria-live="polite">Square / 1:1 · Vice sunset · 1.17 MP</p></div>
+          <div class="workspace-tools">
+            <div class="history-buttons" role="group" aria-label="Edit history">
+              <button class="quiet-button" id="undo-button" aria-label="Undo" disabled><svg class="icon"><use href="#icon-undo"/></svg><span>Undo</span></button>
+              <button class="quiet-button" id="redo-button" aria-label="Redo" disabled><svg class="icon redo-icon"><use href="#icon-undo"/></svg><span>Redo</span></button>
+            </div>
+            <button class="quiet-button" id="guides-toggle" aria-label="Safe-area guides" aria-pressed="false" aria-keyshortcuts="H"><svg class="icon"><use href="#icon-guide"/></svg><span>Guides</span></button>
+            <button class="quiet-button" id="compare-toggle" aria-pressed="false" aria-controls="comparison-original compare-handle" aria-keyshortcuts="C" title="C toggles the draggable before/after comparison"><svg class="icon"><use href="#icon-compare"/></svg><span>Compare</span></button>
+            <button class="quiet-button" id="preview-toggle" aria-pressed="false"><svg class="icon"><use href="#icon-eye"/></svg><span>Preview</span></button>
+          </div>
         </div>
         <div class="panel-bar"><span class="panel-bar-label">EDIT PANEL</span><div class="panel-tabs" role="group" aria-label="Select photo panel">
           <button class="panel-tab active" data-panel="hero" aria-pressed="true"><span>01</span>Hero</button>
           <button class="panel-tab" data-panel="scene" aria-pressed="false"><span>02</span>Scene</button>
           <button class="panel-tab" data-panel="detail" aria-pressed="false"><span>03</span>Detail</button>
           <button class="panel-tab" data-panel="atmosphere" aria-pressed="false"><span>04</span>Atmosphere</button>
-        </div><span class="autosave-label"><span class="status-dot"></span>Live canvas</span></div>
+        </div><button class="quiet-button compare-button" id="compare-original" aria-pressed="false" title="Hold with the mouse, Space, or Enter to compare ungraded photos"><svg class="icon"><use href="#icon-compare"/></svg><span>Hold original</span></button></div>
 
         <div class="stage" id="stage">
           <div class="stage-corner top-left"></div><div class="stage-corner bottom-right"></div>
           <div class="canvas-wrap" id="canvas-wrap">
             <canvas id="cover-canvas" width="1080" height="1080" tabindex="0" role="img" aria-label="Live poster preview. Drag a panel to reposition its photo."></canvas>
+            <div class="comparison-original" id="comparison-original" aria-hidden="true" hidden><canvas id="original-canvas" width="1080" height="1080"></canvas></div>
             <svg id="selection-overlay" class="selection-overlay" viewBox="0 0 1080 1080" aria-hidden="true"><polygon id="selection-polygon"/></svg>
+            <svg id="safe-area-overlay" class="safe-area-overlay" viewBox="0 0 1080 1080" aria-hidden="true" hidden>
+              <rect id="safe-area-rect" x="70" y="76" width="940" height="928"/>
+              <text id="safe-area-label" x="82" y="104">KEEP THE IMPORTANT PART IN HERE</text>
+            </svg>
+            <div class="comparison-labels" id="comparison-labels" aria-hidden="true" hidden><span>ORIGINAL</span><span id="comparison-grade-label">VICE SUNSET</span></div>
+            <button class="compare-handle" id="compare-handle" role="slider" aria-label="Original photo reveal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50% original, 50% graded" aria-orientation="horizontal" hidden><span aria-hidden="true">‹ ›</span></button>
           </div>
           <div class="loading-state" id="loading-state"><span class="loading-sun"></span>Finding the golden hour…</div>
-          <div class="stage-format"><span id="dimension-label">1080 × 1080</span><span class="stage-format-divider"></span><span>PNG / FULL RESOLUTION</span></div>
+          <div class="stage-format"><span id="dimension-label">1080 × 1080</span><span class="stage-format-divider"></span><span id="encoding-label">PNG / FULL RESOLUTION</span><span class="guide-note" id="guide-note" hidden>GUIDES NOT EXPORTED</span></div>
         </div>
 
         <div class="crop-inspector" id="crop-inspector">
-          <div class="crop-help"><svg class="icon"><use href="#icon-move"/></svg><div><strong id="crop-panel-label">Hero crop</strong><span>Drag on the canvas to reposition</span></div></div>
+          <div class="crop-help"><svg class="icon"><use href="#icon-move"/></svg><div><strong id="crop-panel-label">Hero crop</strong><span id="source-photo-info">Drag on the canvas to reposition</span></div></div>
           <div class="crop-control zoom-control"><div><label for="zoom-input">ZOOM</label><output id="zoom-value" for="zoom-input">100%</output></div><input id="zoom-input" type="range" min="1" max="3.5" step="0.01" value="1"></div>
           <div class="crop-control position-control"><div><label for="x-input">X</label><output id="x-value" for="x-input">0</output></div><input id="x-input" type="range" min="-1" max="1" step="0.01" value="0"></div>
           <div class="crop-control position-control"><div><label for="y-input">Y</label><output id="y-value" for="y-input">−35</output></div><input id="y-input" type="range" min="-1" max="1" step="0.01" value="-0.35"></div>
           <button class="quiet-button reset-button" id="reset-crop"><svg class="icon"><use href="#icon-reset"/></svg>Reset</button>
         </div>
-        <footer class="workspace-footer"><span>ORIGINAL ART. UNREASONABLE MAIN-CHARACTER ENERGY.</span><span>MADE FOR THE GOLDEN HOUR <span class="small-star">✦</span></span></footer>
+        <details class="recent-exports" id="recent-exports" hidden>
+          <summary><span>Recent exports</span><span class="recent-count" id="recent-count">0 / 6</span><small>THIS TAB ONLY</small></summary>
+          <div class="recent-tray"><div class="recent-list" id="recent-list" role="list" aria-label="Recent exports with re-download buttons"></div><button class="quiet-button" id="clear-recent">Clear</button></div>
+        </details>
+        <footer class="workspace-footer"><span class="shortcut-hint"><kbd>G</kbd> grade <kbd>F</kbd> format <kbd>H</kbd> guides <kbd>C</kbd> compare <kbd>⌘/Ctrl S</kbd> export</span><span id="history-status">Fresh frame</span></footer>
       </main>
     </div>
   </div>
@@ -125,878 +166,7 @@
   <div class="drop-overlay" id="drop-overlay" hidden><svg class="icon"><use href="#icon-upload"/></svg><strong>Your next cover starts here.</strong><span>Drop up to four photos</span></div>
 
   <!-- LOCAL_MODULE_BEGIN -->
-<script type="module">
-// ---- Original source: src/state.js ----
-const SIZES = Object.freeze({
-  square: { width: 1080, height: 1080, label: 'Square' },
-  portrait: { width: 1080, height: 1350, label: 'Portrait' },
-  wide: { width: 1920, height: 1080, label: 'Wide' },
-});
-
-const PANEL_NAMES = Object.freeze({ hero: 'Hero', scene: 'Scene', detail: 'Detail', atmosphere: 'Atmosphere' });
-const SAMPLE_PATHS = Object.freeze({ boulevard: './samples/boulevard.jpg', pier: './samples/pier.jpg' });
-
-function freshCrop(panel) {
-  const starts = {
-    hero: { zoom: 1, x: 0, y: -0.45 },
-    scene: { zoom: 1.7, x: -0.68, y: 0.72 },
-    detail: { zoom: 1.45, x: 0.62, y: -0.62 },
-    atmosphere: { zoom: 1, x: 0, y: 0 },
-  };
-  return { ...starts[panel] };
-}
-
-function makeState() {
-  return {
-    size: 'square',
-    mood: 'sunset',
-    title: 'VICE AFTER DARK',
-    subtitle: 'A LITTLE DANGER LOOKS GOOD ON YOU.',
-    grain: 18,
-    selectedPanel: 'hero',
-    preview: false,
-    photos: [],
-    panels: Object.fromEntries(Object.keys(PANEL_NAMES).map((key) => [key, { photoId: null, crop: freshCrop(key) }])),
-  };
-}
-
-function decodePhoto(src, name, id, sample = false) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => {
-      if (!image.naturalWidth || !image.naturalHeight) reject(new Error('This photo has no image pixels.'));
-      else resolve({ src, name, id, sample, image });
-    };
-    image.onerror = () => reject(new Error(`Couldn't read ${name}. Try a JPG, PNG, or WEBP photo.`));
-    image.src = src;
-  });
-}
-
-function fileAsDataURI(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error(`Couldn't read ${file.name || 'this photo'}.`));
-    reader.readAsDataURL(file);
-  });
-}
-
-function assignPhotos(state, photos, reset = true) {
-  state.photos = photos;
-  for (const [index, panel] of Object.keys(PANEL_NAMES).entries()) {
-    state.panels[panel].photoId = photos[index % photos.length]?.id || null;
-    if (reset) state.panels[panel].crop = photos.length === 1 || panel === 'hero' || panel === 'atmosphere'
-      ? freshCrop(panel)
-      : { zoom: 1, x: 0, y: -0.2 };
-  }
-}
-
-function photoForPanel(state, panel) {
-  return state.photos.find((photo) => photo.id === state.panels[panel].photoId) || state.photos[0];
-}
-
-function clampValue(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
-
-// ---- Original source: src/renderer.js ----
-
-const PALETTES = Object.freeze({
-  sunset: { sky: '#4d2563', middle: '#cf4790', sun: '#ffb06a', accent: '#ff6387', cool: '#7ae5df', ink: '#191123', paper: '#fff1d9' },
-  neon: { sky: '#141d40', middle: '#76398a', sun: '#f273ba', accent: '#ee57c8', cool: '#60e9eb', ink: '#111325', paper: '#f5e8fb' },
-  coast: { sky: '#204759', middle: '#41949e', sun: '#ffc98b', accent: '#ff986f', cool: '#b3efd5', ink: '#142830', paper: '#fff4db' },
-});
-
-const gradedImages = new WeakMap();
-let filmTexture;
-
-function layoutFor(size) {
-  const { width: w, height: h } = SIZES[size];
-  const u = Math.min(w, h) / 1080;
-  const m = 26 * u;
-  const wide = size === 'wide';
-  const portrait = size === 'portrait';
-  const polygons = wide ? {
-    hero: [[m, m], [w * .698, m], [w * .664, h - m], [m, h - m]],
-    scene: [[w * .718, h * .077], [w - m, m], [w - m, h * .482], [w * .702, h * .504]],
-    detail: [[w * .706, h * .529], [w - m, h * .507], [w - m, h - m], [w * .684, h - m]],
-    atmosphere: [[0, 0], [w, 0], [w, h], [0, h]],
-  } : {
-    hero: [[m, m], [w - m, m], [w - m, h * .653], [w * .605, h * .713], [m, h * .674]],
-    scene: [[m, h * .697], [w * .553, h * .739], [w * .512, h - m], [m, h - m]],
-    detail: [[w * .578, h * .738], [w - m, h * .677], [w - m, h - m], [w * .538, h - m]],
-    atmosphere: [[0, 0], [w, 0], [w, h], [0, h]],
-  };
-  return {
-    w, h, u, m, wide, portrait, polygons,
-    title: wide ? { x: 72, y: 617, width: 1152, height: 337 }
-      : portrait ? { x: 67, y: 635, width: 935, height: 265 }
-        : { x: 66, y: 446, width: 935, height: 249 },
-    kickerY: wide ? 572 : portrait ? 593 : 405,
-    subtitleY: wide ? 986 : portrait ? 933 : 728,
-  };
-}
-
-function boundsFor(polygon) {
-  const xs = polygon.map((point) => point[0]);
-  const ys = polygon.map((point) => point[1]);
-  return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
-}
-
-function geometryFor(image, bounds, crop) {
-  const iw = image.naturalWidth || image.width;
-  const ih = image.naturalHeight || image.height;
-  const scale = Math.max(bounds.width / iw, bounds.height / ih) * crop.zoom;
-  const sw = bounds.width / scale;
-  const sh = bounds.height / scale;
-  const overflowX = Math.max(0, iw - sw);
-  const overflowY = Math.max(0, ih - sh);
-  return {
-    sx: overflowX * (clampValue(crop.x, -1, 1) + 1) / 2,
-    sy: overflowY * (clampValue(crop.y, -1, 1) + 1) / 2,
-    sw, sh, scale, overflowX, overflowY,
-  };
-}
-
-function panelAt(size, x, y) {
-  const { polygons } = layoutFor(size);
-  for (const panel of ['detail', 'scene', 'hero']) {
-    const polygon = polygons[panel];
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const a = polygon[i];
-      const b = polygon[j];
-      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
-    }
-    if (inside) return panel;
-  }
-  return 'atmosphere';
-}
-
-function tracePolygon(ctx, points) {
-  ctx.beginPath();
-  ctx.moveTo(...points[0]);
-  for (let i = 1; i < points.length; i++) ctx.lineTo(...points[i]);
-  ctx.closePath();
-}
-
-function seededRandom(seed) {
-  let value = seed >>> 0;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
-}
-
-function cinematicImage(photo, mood) {
-  let cache = gradedImages.get(photo.image);
-  if (!cache) { cache = new Map(); gradedImages.set(photo.image, cache); }
-  if (cache.has(mood)) return cache.get(mood);
-  const image = photo.image;
-  const ratio = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(image.naturalWidth * ratio);
-  canvas.height = Math.round(image.naturalHeight * ratio);
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = pixels.data;
-  const luma = new Float32Array(canvas.width * canvas.height);
-  for (let i = 0, pixel = 0; i < data.length; i += 4, pixel++) {
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    const light = .2126 * r + .7152 * g + .0722 * b;
-    luma[pixel] = light;
-    const shadow = Math.pow(1 - light / 255, 2);
-    const warm = light / 255;
-    const saturation = mood === 'neon' ? 1.08 : 1.16;
-    let rr = light + (r - light) * saturation;
-    let gg = light + (g - light) * saturation;
-    let bb = light + (b - light) * saturation;
-    rr = (rr - 128) * 1.12 + 128;
-    gg = (gg - 128) * 1.12 + 128;
-    bb = (bb - 128) * 1.12 + 128;
-    if (mood === 'sunset') { rr += 14 * warm + 17 * shadow; gg -= 8 * shadow; bb += 19 * shadow - 9 * warm; }
-    else if (mood === 'neon') { rr += 5 * warm + 15 * shadow; gg -= 7 * warm; bb += 28 * shadow + 13; }
-    else { rr += 10 * warm - 5 * shadow; gg += 7 * shadow; bb += 11 * shadow - 7 * warm; }
-    data[i] = rr; data[i + 1] = gg; data[i + 2] = bb;
-  }
-  // Restrained, original ink contours lend the image an illustrated-poster edge
-  // while preserving faces. The contour comes from local luminance, not an asset.
-  const width = canvas.width;
-  for (let y = 1; y < canvas.height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const p = y * width + x;
-      const edge = Math.abs(luma[p - 1] - luma[p + 1]) + Math.abs(luma[p - width] - luma[p + width]);
-      if (edge < 65) continue;
-      const strength = Math.min(.16, (edge - 65) / 700);
-      const i = p * 4;
-      data[i] *= 1 - strength; data[i + 1] *= 1 - strength; data[i + 2] *= 1 - strength;
-    }
-  }
-  ctx.putImageData(pixels, 0, 0);
-  cache.set(mood, canvas);
-  return canvas;
-}
-
-function drawPhoto(ctx, photo, polygon, crop, mood, type, palette) {
-  if (!photo) return;
-  const bounds = boundsFor(polygon);
-  const image = cinematicImage(photo, mood);
-  const geometry = geometryFor(image, bounds, crop);
-  ctx.save();
-  tracePolygon(ctx, polygon);
-  ctx.clip();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(image, geometry.sx, geometry.sy, geometry.sw, geometry.sh, bounds.x, bounds.y, bounds.width, bounds.height);
-  const tint = ctx.createLinearGradient(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height);
-  tint.addColorStop(0, palette.middle);
-  tint.addColorStop(.42, palette.sun);
-  tint.addColorStop(1, palette.sky);
-  ctx.globalCompositeOperation = 'soft-light';
-  ctx.globalAlpha = type === 'hero' ? .55 : .72;
-  ctx.fillStyle = tint;
-  ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = 1;
-  const shade = ctx.createLinearGradient(0, bounds.y, 0, bounds.y + bounds.height);
-  shade.addColorStop(0, '#110d1c45');
-  shade.addColorStop(.34, '#160e2000');
-  shade.addColorStop(type === 'hero' ? .58 : .64, '#190d2920');
-  shade.addColorStop(1, type === 'hero' ? '#100b20ec' : '#100b2090');
-  ctx.fillStyle = shade;
-  ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-  if (type === 'scene') {
-    const glow = ctx.createLinearGradient(bounds.x, 0, bounds.x + bounds.width, 0);
-    glow.addColorStop(0, `${palette.accent}50`); glow.addColorStop(1, `${palette.accent}00`);
-    ctx.fillStyle = glow; ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-  } else if (type === 'detail') {
-    ctx.globalCompositeOperation = 'soft-light';
-    ctx.fillStyle = palette.cool; ctx.globalAlpha = .4;
-    ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-  }
-  ctx.restore();
-}
-
-function drawPalm(ctx, x, bottom, height, lean, colour) {
-  const topX = x + lean * height;
-  const topY = bottom - height;
-  ctx.save(); ctx.fillStyle = colour; ctx.strokeStyle = colour;
-  ctx.beginPath();
-  ctx.moveTo(x - height * .025, bottom);
-  ctx.bezierCurveTo(x - height * .02, bottom - height * .35, topX - height * .025, topY + height * .28, topX - 3, topY);
-  ctx.lineTo(topX + 4, topY);
-  ctx.bezierCurveTo(topX + height * .014, topY + height * .31, x + height * .031, bottom - height * .3, x + height * .035, bottom);
-  ctx.closePath(); ctx.fill();
-  const directions = [-3.02, -2.6, -2.08, -1.56, -1.0, -.5, -.05, .46, 1.03, 2.35];
-  directions.forEach((angle, index) => {
-    const length = height * (.25 + (index % 3) * .035);
-    const endX = topX + Math.cos(angle) * length;
-    const endY = topY + Math.sin(angle) * length * .55 + length * .24;
-    const controlX = topX + Math.cos(angle) * length * .6;
-    const controlY = topY + Math.sin(angle) * length * .72 - length * .13;
-    ctx.beginPath(); ctx.moveTo(topX, topY);
-    ctx.quadraticCurveTo(controlX - Math.sin(angle) * 8, controlY, endX, endY);
-    ctx.quadraticCurveTo(controlX + Math.sin(angle) * 8, controlY + 7, topX, topY);
-    ctx.fill();
-    for (let i = 2; i < 10; i++) {
-      const t = i / 11;
-      const px = (1 - t) ** 2 * topX + 2 * (1 - t) * t * controlX + t ** 2 * endX;
-      const py = (1 - t) ** 2 * topY + 2 * (1 - t) * t * controlY + t ** 2 * endY;
-      const leaf = length * .2 * Math.sin(t * Math.PI);
-      const tangentX = 2 * (1 - t) * (controlX - topX) + 2 * t * (endX - controlX);
-      const tangentY = 2 * (1 - t) * (controlY - topY) + 2 * t * (endY - controlY);
-      const tangent = Math.atan2(tangentY, tangentX);
-      for (const sign of [-1, 1]) {
-        const leafAngle = tangent + sign * 1.08;
-        ctx.beginPath(); ctx.moveTo(px, py);
-        ctx.quadraticCurveTo(px + Math.cos(leafAngle) * leaf * .65, py + Math.sin(leafAngle) * leaf * .7,
-          px + Math.cos(leafAngle) * leaf, py + Math.sin(leafAngle) * leaf + length * .04);
-        ctx.lineTo(px + Math.cos(tangent) * length * .035, py + Math.sin(tangent) * length * .035);
-        ctx.closePath(); ctx.fill();
-      }
-    }
-  });
-  ctx.restore();
-}
-
-function drawSkyline(ctx, x, baseline, width, unit, palette) {
-  const random = seededRandom(626061);
-  ctx.save();
-  let cursor = x;
-  while (cursor < x + width) {
-    const buildingWidth = (22 + random() * 35) * unit;
-    const height = (24 + random() * 106) * unit;
-    ctx.fillStyle = '#170f2999';
-    ctx.fillRect(cursor, baseline - height, buildingWidth, height);
-    if (random() > .65) ctx.fillRect(cursor + buildingWidth * .4, baseline - height - 14 * unit, 3 * unit, 15 * unit);
-    ctx.fillStyle = `${palette.cool}65`;
-    for (let yy = baseline - height + 8 * unit; yy < baseline - 5 * unit; yy += 12 * unit) {
-      for (let xx = cursor + 5 * unit; xx < cursor + buildingWidth - 4 * unit; xx += 9 * unit) {
-        if (random() > .65) ctx.fillRect(xx, yy, 2 * unit, 3 * unit);
-      }
-    }
-    cursor += buildingWidth + 3 * unit;
-  }
-  ctx.restore();
-}
-
-function spacedText(ctx, value, x, y, size, spacing, colour, weight = 700) {
-  ctx.font = `${weight} ${size}px Arial, Helvetica, sans-serif`;
-  ctx.fillStyle = colour;
-  ctx.textBaseline = 'alphabetic';
-  for (const char of value) {
-    ctx.fillText(char, x, y);
-    x += ctx.measureText(char).width + spacing;
-  }
-  return x;
-}
-
-function titleLines(value) {
-  const title = value.trim().toLocaleUpperCase('en-US');
-  if (!title) return [];
-  const explicit = title.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-  if (explicit.length > 1) return explicit.length <= 3 ? explicit : [explicit[0], explicit[1], explicit.slice(2).join(' ')];
-  const words = title.replace(/\s+/g, ' ').split(' ');
-  if (title.length <= 11 || words.length === 1) return [title];
-  if (title.length > 36 && words.length > 4) {
-    const lines = ['', '', ''];
-    let line = 0;
-    for (const word of words) {
-      if (line < 2 && lines[line].length + word.length > Math.ceil(title.length / 3)) line++;
-      lines[line] += `${lines[line] ? ' ' : ''}${word}`;
-    }
-    return lines.filter(Boolean);
-  }
-  let best = 1, score = Infinity;
-  for (let i = 1; i < words.length; i++) {
-    const a = words.slice(0, i).join(' ').length;
-    const b = words.slice(i).join(' ').length;
-    const next = Math.abs(a / b - .65) + Math.max(a, b) * .004;
-    if (next < score) { score = next; best = i; }
-  }
-  return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
-}
-
-function drawTitle(ctx, text, area, palette) {
-  const lines = titleLines(text);
-  if (!lines.length) return;
-  const lineHeight = area.height / lines.length;
-  const fontSize = Math.min(330, lineHeight / .77);
-  ctx.save();
-  ctx.translate(area.x, area.y);
-  // Custom proportions, slanted cuts and offset ink create original lettering
-  // from ordinary system sans-serif, with no game or downloadable font.
-  for (const [index, line] of lines.entries()) {
-    ctx.save();
-    const letterSize = fontSize * (lines.length > 1 && index === 0 && line.length <= 7 ? 1.12 : 1);
-    ctx.font = `900 ${letterSize}px "Arial Black", Arial, Helvetica, sans-serif`;
-    const measured = ctx.measureText(line).width;
-    const scaleX = Math.min(1.12, (area.width - 20) / measured);
-    const baseline = lineHeight * (index + 1) - 3;
-    ctx.transform(scaleX, 0, -.025, 1, 0, 0);
-    ctx.lineJoin = 'round';
-    ctx.miterLimit = 2;
-    ctx.strokeStyle = palette.ink;
-    ctx.lineWidth = letterSize * .075;
-    ctx.strokeText(line, 5, baseline + 8);
-    ctx.fillStyle = palette.accent;
-    ctx.fillText(line, 5, baseline + 6);
-    ctx.strokeStyle = palette.accent;
-    ctx.lineWidth = letterSize * .032;
-    ctx.strokeText(line, 5, baseline + 6);
-    ctx.strokeStyle = '#211326';
-    ctx.lineWidth = letterSize * .062;
-    ctx.strokeText(line, 0, baseline);
-    const fill = ctx.createLinearGradient(0, baseline - letterSize * .7, 0, baseline);
-    fill.addColorStop(0, '#fff8e9'); fill.addColorStop(.7, palette.paper); fill.addColorStop(1, '#f9c3a8');
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = fill;
-    ctx.lineWidth = letterSize * .032;
-    ctx.strokeText(line, 0, baseline);
-    ctx.fillText(line, 0, baseline);
-    ctx.restore();
-  }
-  ctx.restore();
-}
-
-function drawPanelLabel(ctx, panel, layout, palette) {
-  const bounds = boundsFor(layout.polygons[panel]);
-  const x = bounds.x + (layout.wide ? 57 : 22) * layout.u;
-  const y = panel === 'scene' ? (layout.wide ? 105 : bounds.y + 69) : (layout.wide ? bounds.y + 55 : bounds.y + 69);
-  const number = panel === 'scene' ? '02' : '03';
-  const label = panel === 'scene' ? 'THE GETAWAY' : 'THE OTHER SIDE';
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(panel === 'scene' ? -.052 : -.073);
-  ctx.fillStyle = palette.paper;
-  ctx.fillRect(-8, -22, 34, 29);
-  ctx.font = '900 20px Arial, sans-serif'; ctx.fillStyle = palette.ink; ctx.fillText(number, -4, 0);
-  spacedText(ctx, label, 40, -3, layout.wide ? 13 : 11, 1.7, palette.paper);
-  ctx.fillStyle = palette.accent; ctx.fillRect(40, 6, layout.wide ? 174 : 126, 2);
-  ctx.restore();
-}
-
-function drawTexture(ctx, layout, amount) {
-  if (!amount) return;
-  if (!filmTexture) {
-    filmTexture = document.createElement('canvas'); filmTexture.width = 192; filmTexture.height = 192;
-    const tx = filmTexture.getContext('2d');
-    const pixels = tx.createImageData(192, 192);
-    const random = seededRandom(26061986);
-    for (let i = 0; i < pixels.data.length; i += 4) {
-      const value = random() > .5 ? 255 : 0;
-      pixels.data[i] = value; pixels.data[i + 1] = value; pixels.data[i + 2] = value;
-      pixels.data[i + 3] = Math.floor(random() * 65);
-    }
-    tx.putImageData(pixels, 0, 0);
-  }
-  ctx.save(); ctx.globalAlpha = amount / 100;
-  ctx.fillStyle = ctx.createPattern(filmTexture, 'repeat'); ctx.fillRect(0, 0, layout.w, layout.h);
-  ctx.restore();
-}
-
-function renderCover(canvas, state) {
-  const layout = layoutFor(state.size);
-  const { w, h, u, m, polygons } = layout;
-  if (canvas.width !== w) canvas.width = w;
-  if (canvas.height !== h) canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  const palette = PALETTES[state.mood];
-  ctx.resetTransform(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = palette.ink; ctx.fillRect(0, 0, w, h);
-  const atmosphere = photoForPanel(state, 'atmosphere');
-  if (atmosphere) {
-    ctx.save(); ctx.filter = 'blur(15px)'; ctx.globalAlpha = .65;
-    drawPhoto(ctx, atmosphere, polygons.atmosphere, state.panels.atmosphere.crop, state.mood, 'atmosphere', palette);
-    ctx.restore();
-  }
-  const sky = ctx.createLinearGradient(w * .05, 0, w * .85, h);
-  sky.addColorStop(0, palette.sky); sky.addColorStop(.4, palette.middle); sky.addColorStop(.68, palette.sun); sky.addColorStop(1, palette.sky);
-  ctx.globalAlpha = .85; ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
-
-  for (const panel of ['hero', 'scene', 'detail']) {
-    ctx.save(); tracePolygon(ctx, polygons[panel]);
-    ctx.shadowColor = '#08050c'; ctx.shadowBlur = 22 * u; ctx.shadowOffsetY = 6 * u;
-    ctx.fillStyle = palette.ink; ctx.fill(); ctx.restore();
-    drawPhoto(ctx, photoForPanel(state, panel), polygons[panel], state.panels[panel].crop, state.mood, panel, palette);
-    ctx.save(); tracePolygon(ctx, polygons[panel]); ctx.strokeStyle = '#17101f'; ctx.lineWidth = 9 * u; ctx.stroke();
-    ctx.lineWidth = 1.3 * u; ctx.strokeStyle = `${palette.paper}ae`; ctx.stroke(); ctx.restore();
-  }
-
-  // All silhouettes, light trails, skyline and editorial marks are generated.
-  ctx.save(); tracePolygon(ctx, polygons.hero); ctx.clip();
-  const sunX = layout.wide ? 191 : 142;
-  const sunY = layout.wide ? 244 : layout.portrait ? 269 : 206;
-  const halo = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 175 * u);
-  halo.addColorStop(0, `${palette.sun}66`); halo.addColorStop(.48, `${palette.accent}26`); halo.addColorStop(1, `${palette.accent}00`);
-  ctx.fillStyle = halo; ctx.fillRect(0, 0, w, h);
-  ctx.globalAlpha = .16; ctx.fillStyle = palette.sun;
-  ctx.beginPath(); ctx.arc(sunX, sunY, 66 * u, 0, Math.PI * 2); ctx.fill();
-  ctx.globalAlpha = .14; ctx.strokeStyle = palette.paper; ctx.lineWidth = 2 * u;
-  for (let i = 0; i < 6; i++) {
-    const yy = sunY + i * 8;
-    const half = Math.sqrt(Math.max(0, 66 ** 2 - (yy - sunY) ** 2));
-    ctx.beginPath(); ctx.moveTo(sunX - half, yy); ctx.lineTo(sunX + half, yy); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  const baseline = layout.wide ? 778 : layout.portrait ? 832 : 635;
-  drawSkyline(ctx, layout.wide ? 832 : 637, baseline, layout.wide ? 550 : 420, u, palette);
-  drawPalm(ctx, layout.wide ? 58 : 39, baseline + 80, layout.portrait ? 459 : 367, -.025, '#181025b0');
-  drawPalm(ctx, layout.wide ? 1237 : 1021, baseline + 53, layout.portrait ? 438 : 345, -.12, '#160e26b0');
-  ctx.restore();
-
-  // Neon seam: one clean luminous cut, rather than a uniform template border.
-  ctx.save(); ctx.strokeStyle = palette.cool; ctx.lineWidth = 3 * u;
-  ctx.shadowColor = palette.cool; ctx.shadowBlur = 11 * u;
-  ctx.beginPath();
-  if (layout.wide) { ctx.moveTo(w * .691, h * .53); ctx.lineTo(w * .676, h * .956); }
-  else { ctx.moveTo(w * .587, h * .726); ctx.lineTo(w * .958, h * .674); }
-  ctx.stroke(); ctx.restore();
-
-  spacedText(ctx, 'VICE CITY / FLORIDA', 65 * u, 69 * u, 13 * u, 2.5 * u, palette.paper);
-  spacedText(ctx, '25°46′ N   80°12′ W', 65 * u, 93 * u, 9 * u, 1.6 * u, `${palette.paper}b0`, 500);
-  ctx.strokeStyle = `${palette.paper}b0`; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(65, 108); ctx.lineTo(layout.wide ? 573 : 443, 108); ctx.stroke();
-
-  const badgeX = w - 83 * u;
-  ctx.save(); ctx.translate(badgeX, 85 * u); ctx.rotate(.09);
-  ctx.strokeStyle = palette.paper; ctx.lineWidth = 1.5 * u;
-  ctx.beginPath(); ctx.arc(0, 0, 39 * u, 0, Math.PI * 2); ctx.stroke();
-  ctx.font = `900 ${31 * u}px Arial, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = palette.paper; ctx.fillText('06', 0, 3 * u);
-  ctx.font = `700 ${7 * u}px Arial, sans-serif`; ctx.fillText('VOL. / VICEFRAME', 0, 17 * u); ctx.restore();
-
-  const kicker = 'MAKE YOUR OWN RULES.';
-  ctx.save(); ctx.translate(layout.title.x + 3, layout.kickerY); ctx.rotate(-.025);
-  ctx.fillStyle = palette.accent;
-  tracePolygon(ctx, [[-5, -21], [264, -21], [254, 6], [-15, 6]]); ctx.fill();
-  spacedText(ctx, kicker, 0, -3, 12, 1.45, '#241225'); ctx.restore();
-
-  drawTitle(ctx, state.title, layout.title, palette);
-  if (state.subtitle.trim()) {
-    const subtitle = state.subtitle.trim().replace(/\s+/g, ' ').toLocaleUpperCase('en-US');
-    ctx.save();
-    ctx.font = '700 15px Arial, sans-serif';
-    const measured = ctx.measureText(subtitle).width + subtitle.length * 1.35;
-    const available = layout.wide ? 1120 : 915;
-    ctx.translate(layout.title.x, layout.subtitleY);
-    ctx.scale(Math.min(1, available / measured), 1);
-    ctx.fillStyle = '#171020ce'; ctx.fillRect(-10, -20, measured + 20, 29);
-    spacedText(ctx, subtitle, 0, 0, 15, 1.35, palette.paper, 700);
-    ctx.restore();
-  }
-  drawPanelLabel(ctx, 'scene', layout, palette);
-  drawPanelLabel(ctx, 'detail', layout, palette);
-
-  const footerY = h - 47 * u;
-  ctx.fillStyle = '#170f22e8'; ctx.fillRect(m, footerY - 22 * u, w - m * 2, 44 * u);
-  spacedText(ctx, 'PALMS. HEAT. NO TURNING BACK.', 60 * u, footerY + 2 * u, 10 * u, 2 * u, palette.paper);
-  const editionX = layout.wide ? w - 414 : w - 367;
-  spacedText(ctx, 'AN ORIGINAL / VICEFRAME', editionX, footerY + 2, 8, 1.4, `${palette.paper}ad`, 500);
-  const random = seededRandom(601086);
-  let barX = w - 141;
-  ctx.fillStyle = palette.paper;
-  while (barX < w - 58) { const bw = random() > .55 ? 3 : 1; ctx.fillRect(barX, footerY - 12, bw, 22); barX += bw + 2; }
-  ctx.strokeStyle = '#ffcab688'; ctx.lineWidth = 1;
-  ctx.strokeRect(10 * u, 10 * u, w - 20 * u, h - 20 * u);
-  ctx.fillStyle = palette.cool;
-  for (const [xx, yy] of [[10, 10], [w - 10, 10], [10, h - 10], [w - 10, h - 10]]) {
-    ctx.fillRect(xx - 5, yy - 1, 10, 2); ctx.fillRect(xx - 1, yy - 5, 2, 10);
-  }
-  drawTexture(ctx, layout, state.grain);
-  return canvas;
-}
-
-function canvasPNG(canvas) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('The browser could not create the PNG.')), 'image/png');
-  });
-}
-
-// ---- Original source: src/editor.js ----
-
-const state = makeState();
-const byId = (name) => document.getElementById(name);
-const coverCanvas = byId('cover-canvas');
-const canvasWrap = byId('canvas-wrap');
-const stage = byId('stage');
-const titleInput = byId('title-input');
-const subtitleInput = byId('subtitle-input');
-const exportButton = byId('export-button');
-const photoInput = byId('photo-input');
-const selectionPolygon = byId('selection-polygon');
-const panelSource = byId('panel-source');
-const query = new URLSearchParams(location.search);
-const shotMode = ['cover', 'editor'].includes(query.get('shot')) ? query.get('shot') : '';
-const cachedSamples = new Map();
-let framePending = false;
-let toastTimer;
-let busyImport = false;
-let exporting = false;
-let uploadedSequence = 0;
-let dragState = null;
-let dragDepth = 0;
-window.__shotReady = false;
-
-if (shotMode) document.body.classList.add(`shot-${shotMode}`);
-
-function notify(message) {
-  const toast = byId('toast');
-  clearTimeout(toastTimer); toast.textContent = message; toast.classList.add('visible');
-  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3800);
-}
-
-function fitCanvas() {
-  const dimensions = SIZES[state.size];
-  const styles = getComputedStyle(stage);
-  const availableW = stage.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight);
-  const availableH = stage.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom);
-  const scale = Math.min(availableW / dimensions.width, availableH / dimensions.height);
-  canvasWrap.style.width = `${Math.max(1, Math.floor(dimensions.width * scale))}px`;
-  canvasWrap.style.height = `${Math.max(1, Math.floor(dimensions.height * scale))}px`;
-}
-
-function renderNow() {
-  renderCover(coverCanvas, state);
-  const dimensions = SIZES[state.size];
-  byId('dimension-label').textContent = `${dimensions.width} × ${dimensions.height}`;
-  byId('selection-overlay').setAttribute('viewBox', `0 0 ${dimensions.width} ${dimensions.height}`);
-  selectionPolygon.setAttribute('points', layoutFor(state.size).polygons[state.selectedPanel].map((point) => point.join(',')).join(' '));
-  coverCanvas.setAttribute('aria-label', `${state.title || 'Untitled'} — ${dimensions.label} poster. ${PANEL_NAMES[state.selectedPanel]} panel selected. Drag to reposition its photo.`);
-  framePending = false;
-}
-
-function scheduleRender() {
-  if (!framePending) { framePending = true; requestAnimationFrame(renderNow); }
-}
-
-function syncCropControls() {
-  const crop = state.panels[state.selectedPanel].crop;
-  for (const key of ['zoom', 'x', 'y']) byId(`${key}-input`).value = String(crop[key]);
-  byId('zoom-value').textContent = `${Math.round(crop.zoom * 100)}%`;
-  byId('x-value').textContent = String(Math.round(crop.x * 100));
-  byId('y-value').textContent = String(Math.round(crop.y * 100));
-  byId('crop-panel-label').textContent = `${PANEL_NAMES[state.selectedPanel]} crop`;
-  byId('source-panel-label').textContent = PANEL_NAMES[state.selectedPanel];
-  panelSource.value = state.panels[state.selectedPanel].photoId || '';
-}
-
-function syncButtons() {
-  for (const [attribute, value] of [['size', state.size], ['mood', state.mood], ['panel', state.selectedPanel]]) {
-    document.querySelectorAll(`[data-${attribute}]`).forEach((button) => {
-      const active = button.dataset[attribute] === value;
-      button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
-    });
-  }
-  document.querySelectorAll('[data-sample]').forEach((button) => {
-    button.classList.toggle('active', state.photos.length === 1 && state.photos[0].id === button.dataset.sample);
-  });
-}
-
-function photoLibrary() {
-  const library = byId('photo-library');
-  library.replaceChildren(); panelSource.replaceChildren();
-  byId('photo-count').textContent = `${state.photos.length} / 4`;
-  for (const [index, photo] of state.photos.entries()) {
-    const tile = document.createElement('div'); tile.className = 'photo-tile';
-    if (photo.id === state.panels[state.selectedPanel].photoId) tile.classList.add('selected');
-    const choose = document.createElement('button');
-    choose.style.cssText = 'width:100%;height:100%;border:0;padding:0;background:transparent;display:block';
-    choose.setAttribute('aria-label', `Use ${photo.name} in ${PANEL_NAMES[state.selectedPanel]} panel`);
-    const img = document.createElement('img'); img.src = photo.src; img.alt = photo.name;
-    const number = document.createElement('span'); number.className = 'photo-index'; number.textContent = `0${index + 1}`;
-    choose.append(img, number);
-    choose.addEventListener('click', () => selectPhoto(photo.id));
-    tile.append(choose);
-    if (state.photos.length > 1) {
-      const remove = document.createElement('button'); remove.className = 'photo-remove';
-      remove.setAttribute('aria-label', `Remove ${photo.name}`);
-      remove.innerHTML = '<svg class="icon"><use href="#icon-close"/></svg>';
-      remove.addEventListener('click', () => removePhoto(photo.id)); tile.append(remove);
-    }
-    library.append(tile);
-    const option = document.createElement('option'); option.value = photo.id; option.textContent = photo.name; panelSource.append(option);
-  }
-  for (let i = state.photos.length; i < 4; i++) {
-    const slot = document.createElement('button'); slot.className = 'photo-slot'; slot.setAttribute('aria-label', `Add photo ${i + 1}`);
-    slot.innerHTML = '<svg class="icon"><use href="#icon-plus"/></svg>'; slot.addEventListener('click', () => photoInput.click()); library.append(slot);
-  }
-  syncCropControls(); syncButtons();
-}
-
-function selectPhoto(id) {
-  state.panels[state.selectedPanel].photoId = id;
-  state.panels[state.selectedPanel].crop = freshCrop(state.selectedPanel);
-  photoLibrary(); scheduleRender();
-}
-
-function removePhoto(id) {
-  state.photos = state.photos.filter((photo) => photo.id !== id);
-  for (const panel of Object.values(state.panels)) {
-    if (panel.photoId === id) panel.photoId = state.photos[0].id;
-  }
-  photoLibrary(); scheduleRender();
-}
-
-function selectPanel(panel) {
-  state.selectedPanel = panel;
-  syncCropControls(); syncButtons(); photoLibrary();
-  selectionPolygon.setAttribute('points', layoutFor(state.size).polygons[panel].map((point) => point.join(',')).join(' '));
-}
-
-async function samplePhoto(name) {
-  const src = globalThis.__VICEFRAME_SAMPLE_DATA__?.[name] || SAMPLE_PATHS[name];
-  if (!cachedSamples.has(name)) cachedSamples.set(name, decodePhoto(src, name === 'pier' ? 'The pier' : 'Boulevard', name, true));
-  return cachedSamples.get(name);
-}
-
-async function useSample(name, announce = true) {
-  try {
-    const photo = await samplePhoto(name);
-    assignPhotos(state, [photo]); photoLibrary(); renderNow();
-    if (announce) notify(`${photo.name} is in the frame. Make it yours.`);
-  } catch (error) { notify(error.message); throw error; }
-}
-
-async function importPhotos(fileList) {
-  if (busyImport) { notify('Finishing your last photos. One moment…'); return; }
-  const files = Array.from(fileList);
-  if (!files.length) return;
-  const current = state.photos.filter((photo) => !photo.sample);
-  const capacity = 4 - current.length;
-  if (!capacity) { notify('Four photos are loaded. Remove one to add another.'); photoInput.value = ''; return; }
-  busyImport = true; byId('upload-button').disabled = true;
-  const loaded = [];
-  const errors = [];
-  for (const file of files.slice(0, capacity)) {
-    try {
-      if (file.type && !file.type.startsWith('image/')) throw new Error(`${file.name} is not a photo.`);
-      if (file.size > 32 * 1024 * 1024) throw new Error(`${file.name} is over 32 MB. Try a smaller photo.`);
-      const src = await fileAsDataURI(file);
-      loaded.push(await decodePhoto(src, file.name || 'Your photo', `upload-${++uploadedSequence}`));
-    } catch (error) { errors.push(error.message); }
-  }
-  if (loaded.length) {
-    assignPhotos(state, [...current, ...loaded]);
-    photoLibrary(); renderNow();
-  }
-  busyImport = false; byId('upload-button').disabled = false; photoInput.value = '';
-  if (errors.length) notify(errors[0]);
-  else if (files.length > capacity) notify(`Loaded ${loaded.length} photos. The library holds four at a time.`);
-  else if (loaded.length) notify(`${loaded.length === 1 ? 'Photo' : `${loaded.length} photos`} loaded. You’re the main event.`);
-}
-
-function canvasPoint(event) {
-  const rect = coverCanvas.getBoundingClientRect();
-  return { x: (event.clientX - rect.left) * coverCanvas.width / rect.width, y: (event.clientY - rect.top) * coverCanvas.height / rect.height };
-}
-
-function cropChange(key, value) {
-  state.panels[state.selectedPanel].crop[key] = clampValue(Number(value), key === 'zoom' ? 1 : -1, key === 'zoom' ? 3.5 : 1);
-  syncCropControls(); scheduleRender();
-}
-
-function exportName() {
-  const title = state.title.normalize('NFKD').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 60).toLowerCase() || 'your-cover';
-  return `viceframe-${title}-${state.size}.png`;
-}
-
-async function createExport() {
-  const canvas = document.createElement('canvas');
-  renderCover(canvas, state);
-  const blob = await canvasPNG(canvas);
-  return { blob, width: canvas.width, height: canvas.height, filename: exportName() };
-}
-
-async function exportPNG() {
-  if (exporting || !state.photos.length) return;
-  exporting = true; exportButton.disabled = true;
-  exportButton.querySelector('span').textContent = 'Rendering…';
-  try {
-    const output = await createExport();
-    const url = URL.createObjectURL(output.blob);
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = output.filename;
-    document.body.append(anchor); anchor.click(); anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    window.__lastExport = { width: output.width, height: output.height, bytes: output.blob.size, filename: output.filename, type: output.blob.type };
-    notify(`Your ${output.width} × ${output.height} PNG is ready. Go make a scene.`);
-  } catch (error) { notify(`Export failed: ${error.message}`); }
-  exporting = false; exportButton.disabled = false;
-  exportButton.querySelector('span').textContent = 'Export PNG';
-}
-
-titleInput.addEventListener('input', () => {
-  state.title = titleInput.value; byId('title-count').textContent = `${state.title.length} / 72`; scheduleRender();
-});
-subtitleInput.addEventListener('input', () => { state.subtitle = subtitleInput.value; scheduleRender(); });
-byId('grain-input').addEventListener('input', (event) => { state.grain = Number(event.target.value); byId('grain-value').textContent = `${state.grain}%`; scheduleRender(); });
-byId('upload-button').addEventListener('click', () => photoInput.click());
-photoInput.addEventListener('change', () => importPhotos(photoInput.files));
-panelSource.addEventListener('change', () => selectPhoto(panelSource.value));
-exportButton.addEventListener('click', exportPNG);
-for (const key of ['zoom', 'x', 'y']) byId(`${key}-input`).addEventListener('input', (event) => cropChange(key, event.target.value));
-byId('reset-crop').addEventListener('click', () => { state.panels[state.selectedPanel].crop = freshCrop(state.selectedPanel); syncCropControls(); scheduleRender(); });
-byId('preview-toggle').addEventListener('click', () => {
-  state.preview = !state.preview; document.body.classList.toggle('preview-active', state.preview);
-  byId('preview-toggle').setAttribute('aria-pressed', String(state.preview));
-  byId('preview-toggle').querySelector('span').textContent = state.preview ? 'Edit crop' : 'Preview';
-});
-document.querySelectorAll('[data-size]').forEach((button) => button.addEventListener('click', () => { state.size = button.dataset.size; syncButtons(); renderNow(); fitCanvas(); }));
-document.querySelectorAll('[data-mood]').forEach((button) => button.addEventListener('click', () => { state.mood = button.dataset.mood; syncButtons(); scheduleRender(); }));
-document.querySelectorAll('[data-panel]').forEach((button) => button.addEventListener('click', () => selectPanel(button.dataset.panel)));
-document.querySelectorAll('[data-sample]').forEach((button) => button.addEventListener('click', () => { useSample(button.dataset.sample).catch(() => {}); }));
-
-coverCanvas.addEventListener('pointerdown', (event) => {
-  if (state.preview || !state.photos.length || event.button !== 0) return;
-  const point = canvasPoint(event);
-  const hit = panelAt(state.size, point.x, point.y);
-  // An explicitly selected atmosphere stays editable anywhere, since its visible
-  // strips are thin. Otherwise direct clicks select the visible photo panel.
-  if (state.selectedPanel !== 'atmosphere') selectPanel(hit);
-  const panel = state.selectedPanel;
-  const photo = photoForPanel(state, panel);
-  const geometry = geometryFor(photo.image, boundsFor(layoutFor(state.size).polygons[panel]), state.panels[panel].crop);
-  dragState = { panel, start: point, crop: { ...state.panels[panel].crop }, geometry, pointerId: event.pointerId };
-  coverCanvas.setPointerCapture(event.pointerId); coverCanvas.focus({ preventScroll: true }); canvasWrap.classList.add('dragging');
-});
-coverCanvas.addEventListener('pointermove', (event) => {
-  if (!dragState || dragState.pointerId !== event.pointerId) return;
-  const point = canvasPoint(event);
-  const { geometry, crop, start, panel } = dragState;
-  const next = state.panels[panel].crop;
-  if (geometry.overflowX > .01) next.x = clampValue(crop.x - (point.x - start.x) * 2 / geometry.scale / geometry.overflowX, -1, 1);
-  if (geometry.overflowY > .01) next.y = clampValue(crop.y - (point.y - start.y) * 2 / geometry.scale / geometry.overflowY, -1, 1);
-  syncCropControls(); scheduleRender();
-});
-function endDrag(event) {
-  if (!dragState || dragState.pointerId !== event.pointerId) return;
-  if (coverCanvas.hasPointerCapture(event.pointerId)) coverCanvas.releasePointerCapture(event.pointerId);
-  dragState = null; canvasWrap.classList.remove('dragging');
-}
-coverCanvas.addEventListener('pointerup', endDrag); coverCanvas.addEventListener('pointercancel', endDrag);
-coverCanvas.addEventListener('lostpointercapture', () => { dragState = null; canvasWrap.classList.remove('dragging'); });
-coverCanvas.addEventListener('wheel', (event) => {
-  if (state.preview) return;
-  event.preventDefault();
-  cropChange('zoom', state.panels[state.selectedPanel].crop.zoom + (event.deltaY < 0 ? .06 : -.06));
-}, { passive: false });
-coverCanvas.addEventListener('keydown', (event) => {
-  if (state.preview) return;
-  const crop = state.panels[state.selectedPanel].crop;
-  const arrows = { ArrowLeft: ['x', .04], ArrowRight: ['x', -.04], ArrowUp: ['y', .04], ArrowDown: ['y', -.04] };
-  if (arrows[event.key]) { event.preventDefault(); const [key, delta] = arrows[event.key]; cropChange(key, crop[key] + delta); }
-  else if (event.key === '+' || event.key === '=') { event.preventDefault(); cropChange('zoom', crop.zoom + .05); }
-  else if (event.key === '-' || event.key === '_') { event.preventDefault(); cropChange('zoom', crop.zoom - .05); }
-});
-
-window.addEventListener('dragenter', (event) => {
-  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
-  event.preventDefault(); dragDepth++; byId('drop-overlay').hidden = false;
-});
-window.addEventListener('dragover', (event) => {
-  if (Array.from(event.dataTransfer?.types || []).includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }
-});
-window.addEventListener('dragleave', (event) => { event.preventDefault(); dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) byId('drop-overlay').hidden = true; });
-window.addEventListener('drop', (event) => {
-  event.preventDefault(); dragDepth = 0; byId('drop-overlay').hidden = true;
-  if (event.dataTransfer?.files.length) importPhotos(event.dataTransfer.files);
-});
-window.addEventListener('blur', () => { dragDepth = 0; byId('drop-overlay').hidden = true; });
-new ResizeObserver(fitCanvas).observe(stage);
-
-// Read-only diagnostics make the deterministic views and export verification
-// observable without adding network hooks or a second rendering path.
-window.__viceframe = {
-  snapshot: () => ({
-    size: state.size, title: state.title, subtitle: state.subtitle, mood: state.mood, grain: state.grain,
-    selectedPanel: state.selectedPanel,
-    photos: state.photos.map(({ id, name, sample }) => ({ id, name, sample })),
-    panels: JSON.parse(JSON.stringify(state.panels)),
-  }),
-  exportPNG: createExport,
-};
-
-async function initialize() {
-  const sampleName = (query.get('photo') || 'boulevard').replace(/\.jpg$/i, '');
-  if (query.has('caption')) state.title = query.get('caption').slice(0, 72);
-  if (query.has('subtitle')) state.subtitle = query.get('subtitle').slice(0, 100);
-  if (Object.hasOwn(SIZES, query.get('size'))) state.size = query.get('size');
-  titleInput.value = state.title; subtitleInput.value = state.subtitle; byId('title-count').textContent = `${state.title.length} / 72`;
-  await useSample(Object.hasOwn(SAMPLE_PATHS, sampleName) ? sampleName : 'boulevard', false);
-  fitCanvas(); canvasWrap.classList.add('ready'); byId('loading-state').hidden = true; exportButton.disabled = false;
-  if (shotMode === 'cover') {
-    const output = await createExport();
-    const dataURI = await fileAsDataURI(output.blob);
-    const img = byId('export-image'); img.src = dataURI; await img.decode();
-    byId('export-preview').hidden = false;
-    window.__lastExport = { width: output.width, height: output.height, bytes: output.blob.size, filename: output.filename, type: output.blob.type };
-  }
-  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  window.__shotReady = true;
-}
-initialize().catch((error) => { byId('loading-state').textContent = error.message; notify(error.message); console.error(error); });
-
-</script>
+<script defer src="./studio.min.js"></script>
 <!-- LOCAL_MODULE_END -->
 </body>
 </html>

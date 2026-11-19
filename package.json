@@ -1,0 +1,14 @@
+{
+  "name": "viceframe-cover-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Original offline entry for make.fun gta6-cover-art-01",
+  "license": "MIT",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "start": "node serve.ts",
+    "bundle": "node tools/bundle.ts",
+    "build": "node main.ts"
+  }
+}

@@ -1,14 +1,21 @@
 {
   "name": "viceframe-cover-studio",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "Original offline entry for make.fun gta6-cover-art-01",
+  "description": "Viceframe: five-frame offline studio with Neon Vice intensity, split comparison, typography controls, JPEG quality, and session exports",
   "license": "MIT",
   "engines": { "node": ">=22.18.0" },
   "scripts": {
     "start": "node serve.ts",
     "bundle": "node tools/bundle.ts",
-    "build": "node main.ts"
+    "build": "node main.ts",
+    "check": "node --check main.ts && node tools/bundle.ts --check",
+    "verify:browser": "node tools/verify-browser.ts",
+    "verify:server": "node serve.ts --smoke",
+    "screenshots": "node tools/capture-screenshots.ts",
+    "verify:images": "python3 tools/validate-images.py",
+    "verify:package": "node tools/verify-package.ts",
+    "audit": "node tools/audit-authorship.ts"
   }
 }

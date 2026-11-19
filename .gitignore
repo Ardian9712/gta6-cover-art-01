@@ -1,0 +1,7 @@
+.verification/
+.t/
+*.log
+/output/
+/node_modules/
+__pycache__/
+# Session exports, MCP recordings, and repeat builds belong under .verification/.
